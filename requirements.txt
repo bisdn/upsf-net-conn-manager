@@ -1,0 +1,9 @@
+redis
+ipaddress
+pre-commit
+pylint
+flake8
+bandit
+black
+codespell
+setuptools

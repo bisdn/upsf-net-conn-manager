@@ -1,0 +1,62 @@
+tsf:
+  - name: tsf-A
+    endpoints:
+      - type: "l2vpn"
+        params:
+          vpn_id: 1000
+      - type: "vtep"
+        params:
+          ip_address: "10.10.10.100"
+          udp_port: 4789
+          vni: 111111
+        default: "yes"
+      - type: "port_vlan"
+        params:
+          logical_port: "eth0"
+          svlan: 0
+          cvlan: 0
+userplane:
+  - name: up-1
+    service_gateway_name: accel-ppp
+    max_session_count: 1024
+    max_shards: 16
+    supported_service_group:
+      - "basic-internet"
+      - "something"
+      - "somewhere"
+    endpoints:
+      - type: "l2vpn"
+        params:
+          vpn_id: 1000
+      - type: "vtep"
+        params:
+          ip_address: "10.10.10.101"
+          udp_port: 4789
+          vni: 111111
+        default: "yes"
+      - type: "port_vlan"
+        params:
+          logical_port: "eth0"
+          svlan: 0
+          cvlan: 0
+  - name: up-2
+    service_gateway_name: accel-ppp
+    max_session_count: 1024
+    max_shards: 16
+    supported_service_group:
+      - "basic-internet"
+    endpoints:
+      - type: "l2vpn"
+        params:
+          vpn_id: 1000
+      - type: "vtep"
+        params:
+          ip_address: "10.10.10.102"
+          udp_port: 4789
+          vni: 111111
+        default: "yes"
+      - type: "port_vlan"
+        params:
+          logical_port: "eth0"
+          svlan: 0
+          cvlan: 0

@@ -1,0 +1,3 @@
+[submodule "upsf-client"]
+	path = upsf-client
+	url = https://github.com/bisdn/upsf-client
