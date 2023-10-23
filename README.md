@@ -15,75 +15,48 @@ background task that reads pre-defined SGUP and TSF instances
 from an associated policy file and if missing in the UPSF, creates
 those instances.
 
-See next table for a list of command line options supported by 
+See next table for a list of command line options supported by
 net-conn manager. An associated environment variable exists for each
 command line option: the CLI option takes precedence, though.
 
-<table>
-  <tr>
-    <th>Option</th>
-    <th>Default value</th>
-    <th>Environment variable</th>
-    <th>Description</th>
-  </tr>
-  <tr>
-    <td>--upsf-host</td>
-    <td>127.0.0.1</td>
-    <td>UPSF_HOST</td>
-    <td>UPSF server host to connect to</td>
-  </tr>
-  <tr>
-    <td>--upsf-port</td>
-    <td>50051</td>
-    <td>UPSF_PORT</td>
-    <td>UPSF server port to connect to</td>
-  </tr>
-  <tr>
-    <td>--nc-type</td>
-    <td>ms_mptp</td>
-    <td>NC_TYPE</td>
-    <td>Default type assigned to newly created network connections</td>
-  </tr>
-  <tr>
-    <td>--maximum-supported-quality</td>
-    <td>0</td>
-    <td>MAXIMUM_SUPPORTED_QUALITY</td>
-    <td>Maximum supported quality on newly created network connections</td>
-  </tr>
-  <tr>
-    <td>--config-file</td>
-    <td>/etc/upsf/policy.yml</td>
-    <td>CONFIG_FILE</td>
-    <td>Policy configuration file containing pre-defined SGUP, TSF instances</td>
-  </tr>
-  <tr>
-    <td>--log-level</td>
-    <td>info</td>
-    <td>LOG_LEVEL</td>
-    <td>Default loglevel, supported options: info, warning, error, critical, debug</td>
-  </tr>
-</table>
+<!-- markdownlint-disable line-length -->
+| Option                      | Default value        | Environment variable      | Description                                                                |
+|-----------------------------|----------------------|---------------------------|----------------------------------------------------------------------------|
+| --upsf-host                 | 127.0.0.1            | UPSF_HOST                 | UPSF server host to connect to                                             |
+| --upsf-port                 | 50051                | UPSF_PORT                 | UPSF server port to connect to                                             |
+| --nc-type                   | ms_mptp              | NC_TYPE                   | Default type assigned to newly created network connections                 |
+| --maximum-supported-quality | 0                    | MAXIMUM_SUPPORTED_QUALITY | Maximum supported quality on newly created network connections             |
+| --config-file               | /etc/upsf/policy.yml | CONFIG_FILE               | Policy configuration file containing pre-defined SGUP, TSF instances       |
+| --log-level                 | info                 | LOG_LEVEL                 | Default loglevel, supported options: info, warning, error, critical, debug |
 
-This application makes use of the <a
-href="https://github.com/bisdn/upsf-client">upsf-client</a> library for 
+This application makes use of the
+[upsf-client](https://github.com/bisdn/upsf-client) library for
 UPSF related communication.
 
-# Getting started and installation
+## Getting started and installation
 
-Installation is based on <a
-href="https://setuptools.pypa.io/en/latest/setuptools.html">Setuptools</a>.
+Installation is based on [Setuptools](https://setuptools.pypa.io/en/latest/setuptools.html).
 
-For safe testing create and enter a virtual environment, build and install the application, e.g.:
+For safe testing create and enter a virtual environment,
+build and install the application, e.g.:
 
-```
+```sh
 sh# cd upsf-net-conn-manager
 sh# python3 -m venv venv
 sh# source venv/bin/activate
+sh# pip install -r ./requirements.txt
 sh# python3 setup.py build && python3 setup.py install
-sh# net-conn-manager -h
+
+### if you haven't done so yet, build and install the submodule(s) as well
+sh# git submodule update --init --recursive
+sh# cd upsf-client
+sh# pip install -r ./requirements.txt
+sh# python3 setup.py build && python3 setup.py install
+
+sh# upsf-net-conn-manager -h
 ```
 
-# Managing network connections
+## Managing network connections
 
 Please refer to BBF WT-474 Subscriber Session Steering for a general
 introduction to existing network connection types. However, the following
@@ -100,6 +73,7 @@ introduction may be useful:
   transport mptp capability.
 
 From these orthogonal views, a total of four combinations arises:
+
 - SS-PTP
 - SS-MPTP
 - MS-PTP
@@ -107,7 +81,7 @@ From these orthogonal views, a total of four combinations arises:
 
 Support for the MS variants exists in net-conn manager, the single shard
 variants are not supported yet.
-  
+
 net-conn manager creates a mesh of point-to-point VxLAN tunnels
 between all TSF and SGUP instances registered in the UPSF
 database. We assume IP connectivity to exist for any arbitrary
@@ -117,34 +91,34 @@ Quality of Service (QoS) on the underlying transport path.
 Each TSF and SGUP item in the UPSF database must contain a default
 endpoint. If none exists the item will be ignored during the meshing
 process.  At the time of writing, the default endpoint must be of
-type VxLAN, there is no support for transport path types L2vpn or 
+type VxLAN, there is no support for transport path types L2vpn or
 PortVlan yet.
 
 Changes to default endpoints assigned to either a TSF or SGUP instance will be
 detected by net-conn manager, and the associated network connections will be
 recalculated as needed.
 
-## Multi-SubscriberGroup-PointToPoint (MS-PTP)
+### Multi-SubscriberGroup-PointToPoint (MS-PTP)
 
 In MS-PTP mode net-conn manager creates a dedicated network connection
 for each TSF/SGUP pair. Multiple subscriber groups may be mapped to such a
 network connection.
 
-## Multi-SubscriberGroup-MultiPointToPoint (MS-MPTP)
+### Multi-SubscriberGroup-MultiPointToPoint (MS-MPTP)
 
 In MS-MPTP mode net-conn manager creates a multipoint network
 connection between an SGUP instance and all existing TSF instances.
 Multiple subscriber groups may be mapped to such a network connection.
 
-## Single-SubscriberGroup-PointToPoint (SS-PTP)
+### Single-SubscriberGroup-PointToPoint (SS-PTP)
 
 Not supported yet.
 
-## Single-SubscriberGroup-MultiPointToPoint (SS-MPTP)
+### Single-SubscriberGroup-MultiPointToPoint (SS-MPTP)
 
 Not supported yet.
 
-# Policy configuration file
+## Policy configuration file
 
 A configuration file is used for creating pre-defined entities in
 the UPSF. A background task ensures existence of those entities,
@@ -160,9 +134,9 @@ SGUP and TSF instances to conduct their registration autonomously
 in non-testing environments.
 
 See below for an example policy configuration or inspect the examples
-in the <a href="./tools/policy.yml">tools/</a> directory:
+in the [tools/](./tools/policy.yml) directory:
 
-```
+```yaml
 tsf:
   - name: tsf-A
     endpoints:
@@ -216,13 +190,12 @@ userplane:
 You may specify multiple endpoints for a SGUP or TSF instance. Keyword "default"
 identifies the endpoint used as default endpoint for the associated item.
 
+## Limitations
 
-# Limitations
-
-* net-conn manager supports VxLAN based point-to-point connections
+- net-conn manager supports VxLAN based point-to-point connections
   only. Support for different network connection types (l2vpn, port_vlan)
-  is still for further study. 
+  is still for further study.
 
-* net-conn manager supports network connection types MS-PTP and MS-MPTP
+- net-conn manager supports network connection types MS-PTP and MS-MPTP
   only. Both SS-PTP and SS-MPTP are not supported yet. These nc types are
   for further study.

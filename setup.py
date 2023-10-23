@@ -1,5 +1,5 @@
 # BSD 3-Clause License
-# 
+#
 # Copyright (c) 2023, BISDN GmbH
 # All rights reserved.
 
@@ -79,7 +79,7 @@ setuptools.setup(
     description="UPSF network connection manager",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/bisdn/upsf_net_conn_manager.git",
+    url="https://github.com/bisdn/upsf-net-conn-manager.git",
     packages=setuptools.find_packages(),
     classifiers=[
         "Development Status :: 3 - Alpha",
@@ -87,11 +87,7 @@ setuptools.setup(
         "License :: Other/Proprietary License",
         "Operating System :: OS Independent",
     ],
-    install_requires=[
-    ],
     include_package_data=True,
-    package_data={
-    },
     entry_points={
         "console_scripts": [
             "upsf-net-conn-manager=upsf_net_conn_manager.app:main",
