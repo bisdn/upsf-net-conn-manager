@@ -1,9 +1,9 @@
+#!/usr/bin/env python3
+
 # BSD 3-Clause License
 #
 # Copyright (c) 2023, BISDN GmbH
 # All rights reserved.
-
-#!/usr/bin/env python3
 
 """network connection manager module"""
 
@@ -36,6 +36,7 @@ from upsf_client.upsf import (
     UPSF,
     UpsfError,
 )
+from upsf_client.derived_state import DerivedState
 
 
 def str2bool(value):
@@ -370,23 +371,26 @@ class NetworkConnectionManager(threading.Thread):
 
                         # create new sgup
                         if _sgup is None:
+                            item = (
+                                self._upsf_register.create_service_gateway_user_plane(
+                                    **params,
+                                ).service_gateway_user_plane
+                            )
                             self.log.info(
                                 {
                                     "entity": str(self),
-                                    "event": "register (create) sgup at upsf",
+                                    "event": "add service gateway user plane to UPSF",
                                     "params": params,
+                                    "item": item,
                                 }
                             )
-                            self._upsf_register.create_service_gateway_user_plane(
-                                **params,
-                            ).service_gateway_user_plane
 
                         # update existing sgup
                         else:
                             self.log.debug(
                                 {
                                     "entity": str(self),
-                                    "event": "skipping register (update) existing sgup at upsf",
+                                    "event": "skipping sgup update at upsf, already exists",
                                     "params": params,
                                 }
                             )
@@ -395,24 +399,24 @@ class NetworkConnectionManager(threading.Thread):
                     if kind in ("tsf",):
                         # create new tsf
                         if _tsf is None:
+                            item = self._upsf_register.create_traffic_steering_function(
+                                **params,
+                            ).traffic_steering_function
                             self.log.info(
                                 {
                                     "entity": str(self),
-                                    "event": "register (create) tsf at upsf",
+                                    "event": "add traffic steering function to UPSF",
                                     "params": params,
+                                    "item": item,
                                 }
                             )
 
-                            self._upsf_register.create_traffic_steering_function(
-                                **params,
-                            ).traffic_steering_function
-
                         # update existing tsf
                         else:
-                            self.log.info(
+                            self.log.debug(
                                 {
                                     "entity": str(self),
-                                    "event": "skipping register (update) tsf at upsf",
+                                    "event": "skipping tsf update at upsf, already exists",
                                     "params": params,
                                 }
                             )
@@ -554,7 +558,7 @@ class NetworkConnectionManager(threading.Thread):
                 # store fingerprint
                 self._fp_netconns[netconn.name] = fingerprint
 
-                self.log.info(
+                self.log.debug(
                     {
                         "entity": str(self),
                         "event": "add netconn fingerprint",
@@ -865,7 +869,7 @@ class NetworkConnectionManager(threading.Thread):
                             [sgup_endpoint], [tsf_endpoint]
                         )
 
-                        self.log.info(
+                        self.log.debug(
                             {
                                 "entity": str(self),
                                 "event": "calculate net-conn ms-ptp up to tsf",
@@ -943,7 +947,7 @@ class NetworkConnectionManager(threading.Thread):
 
             # remove any network connection not present in current_ncs
             ncs = previous_ncs - current_ncs
-            self.log.info(
+            self.log.debug(
                 {
                     "entity": str(self),
                     "event": "determine network connections for deletion",
@@ -954,7 +958,7 @@ class NetworkConnectionManager(threading.Thread):
             )
 
             for nc_name in ncs:
-                self.log.info(
+                self.log.debug(
                     {
                         "entity": str(self),
                         "event": "delete network connection",
@@ -1189,7 +1193,7 @@ class NetworkConnectionManager(threading.Thread):
                         [sgup_endpoint], tsf_endpoints
                     )
 
-                    self.log.info(
+                    self.log.debug(
                         {
                             "entity": str(self),
                             "event": "calculate network connection to up",
@@ -1263,7 +1267,7 @@ class NetworkConnectionManager(threading.Thread):
 
             # remove any network connection not present in current_ncs
             ncs = previous_ncs - current_ncs
-            self.log.info(
+            self.log.debug(
                 {
                     "entity": str(self),
                     "event": "determine network connections for deletion",
@@ -1324,24 +1328,47 @@ class NetworkConnectionManager(threading.Thread):
                         upsf_host=self.upsf_host,
                         upsf_port=self.upsf_port,
                     )
-                    print(upsf_subscriber)
 
                     for item in upsf_subscriber.read(
                         # subscribe to up, tsf
                         itemtypes=[
                             "service_gateway_user_plane",
                             "traffic_steering_function",
+                            "network_connection",
                         ],
                         watch=True,
                     ):
                         try:
+                            # unknown derived state
+                            derived_state = DerivedState.UNKNOWN.value
+
                             # service gateway user planes
                             if item.service_gateway_user_plane.name not in ("",):
+                                derived_state = (
+                                    item.service_gateway_user_plane.metadata.derived_state
+                                )
                                 self.mesh()
 
                             # traffic steering functions
                             elif item.traffic_steering_function.name not in ("",):
+                                derived_state = (
+                                    item.traffic_steering_function.metadata.derived_state
+                                )
                                 self.mesh()
+
+                            # network connections
+                            elif item.network_connection.name not in ("",):
+                                derived_state = (
+                                    item.network_connection.metadata.derived_state
+                                )
+                                self.mesh()
+
+                            # check policy file for any required changes
+                            if derived_state in (
+                                DerivedState.DELETING.value,
+                                DerivedState.DELETED.value,
+                            ):
+                                self.create_default_items()
 
                         except UpsfError as error:
                             self.log.error(

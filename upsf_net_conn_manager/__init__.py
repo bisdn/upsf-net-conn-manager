@@ -8,7 +8,7 @@
 #
 
 
-""" sss-net-conn-manager related classes and functions """
+""" upsf-net-conn-manager related classes and functions """
 
 __all__ = [
     "app",
